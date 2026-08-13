@@ -10,6 +10,12 @@ standing instruction not to push elsewhere without explicit permission. The Page
 therefore deploys from that branch as well as `main`, so the testable URL is unaffected.
 Say the word and it moves to `main`.
 
+**GitHub Pages needs switching on once, by hand.** The workflow builds and uploads fine, but
+`actions/configure-pages` cannot create the Pages site itself — the workflow token is refused
+("Resource not accessible by integration"), and `enablement: true` does not get around it.
+One-time fix, doable from a phone: repository **Settings → Pages → Build and deployment →
+Source: GitHub Actions**. Every push deploys after that.
+
 **Fixed a spec inconsistency: F2–C6 is 44 keys, not 42.** Doc 02 says the range "spans F2 to
 C6 (42 semitones), matching a 42-key harmonium". F2 to C6 inclusive is 43 semitones and 44
 keys; 42 keys from F2 would end at A♯5. `RANGE` in `config/layout.ts` implements the named
