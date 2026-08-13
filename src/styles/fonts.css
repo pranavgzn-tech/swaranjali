@@ -1,0 +1,44 @@
+/* Self-hosted faces. No Google Fonts CDN link — the app must work offline,
+   and a font that arrives over the network is a label that is missing in
+   aeroplane mode. Licences in src/fonts/OFL.txt. */
+
+/* Sargam labels, the app name and panel headings. A humanist serif with real
+   weight, so a single letter at 26 pt reads as a written character rather
+   than as UI text. */
+@font-face {
+  font-family: 'Swaranjali Serif';
+  src: url('../fonts/source-serif-600.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  /* Labels never disappear: swap shows the fallback rather than nothing. */
+  font-display: swap;
+}
+
+/* Interface text. */
+@font-face {
+  font-family: 'Swaranjali Sans';
+  src: url('../fonts/source-sans-400.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Swaranjali Sans';
+  src: url('../fonts/source-sans-600.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Devanagari sargam, subset to the seven syllables. Listed first in the
+   display stack so those glyphs come from here and everything else falls
+   through to the serif. */
+@font-face {
+  font-family: 'Swaranjali Devanagari';
+  src: url('../fonts/noto-devanagari-600.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+900-97F;
+}

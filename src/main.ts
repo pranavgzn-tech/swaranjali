@@ -4,6 +4,7 @@
  * begin" overlay and mount the layout for the current size class.
  */
 
+import './styles/fonts.css';
 import './styles/tokens.css';
 import './styles/base.css';
 import './styles/boot.css';

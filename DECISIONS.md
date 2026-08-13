@@ -126,6 +126,13 @@ for overflow and stuck errors; the audio graph is rendered offline and measured.
 the black-key overflow, the label collision and the transport overflow were found. It is not
 a substitute for your ears — see the checklist in the session notes.
 
-**Fonts are still system fallbacks at the end of Phase 1.** The key labels look right in
-`ui-serif`, and choosing a face is a judgement I would rather you made by eye on the device
-than I made by name. Candidates are all SIL OFL so licensing is not the constraint.
+**Fonts: Source Serif 4 (600), Source Sans 3 (400/600), Noto Sans Devanagari (600).** All
+three are SIL Open Font License 1.1, which permits bundling and redistribution — doc 10's
+open question 3 settled. Self-hosted as WOFF2 in `src/fonts/`, 53 KB in total, with the
+licence and copyright notices in `src/fonts/OFL.txt`. The serif carries the sargam because a
+single letter at 26 pt should read as a written character rather than as UI text; the
+Devanagari face is subset to the seven sargam syllables (1.8 KB) and gated by
+`unicode-range`, so it only downloads when those labels are actually on screen.
+
+`scripts/fetch-fonts.ts` re-fetches them, but it is **not** part of the build: the files are
+committed, because the build must not need the network any more than the app does.

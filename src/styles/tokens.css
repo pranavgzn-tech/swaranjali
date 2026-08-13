@@ -24,7 +24,7 @@
   --size-body: 16px;
   --size-matra: 32px;
 
-  --font-display: 'Swaranjali Serif', ui-serif, Georgia, serif;
+  --font-display: 'Swaranjali Devanagari', 'Swaranjali Serif', ui-serif, Georgia, serif;
   --font-ui: 'Swaranjali Sans', ui-sans-serif, -apple-system, system-ui, sans-serif;
 
   /* Motion, doc 06. Key press is functional feedback and survives
