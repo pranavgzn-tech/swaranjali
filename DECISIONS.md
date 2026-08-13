@@ -19,8 +19,12 @@ Source: GitHub Actions**. Every push deploys after that.
 **Fixed a spec inconsistency: F2–C6 is 44 keys, not 42.** Doc 02 says the range "spans F2 to
 C6 (42 semitones), matching a 42-key harmonium". F2 to C6 inclusive is 43 semitones and 44
 keys; 42 keys from F2 would end at A♯5. `RANGE` in `config/layout.ts` implements the named
-endpoints F2–C6, because those are what the user will see on the octave shift. Flagging
-rather than silently picking — tell me if you want the range trimmed to end at A♯5 instead.
+endpoints F2–C6.
+
+**Settled:** keep F2–C6. The difference is two notes at the extreme top of the instrument,
+which are rarely played and cannot teach a habit that has to be unlearned — every other note
+sits at the same pitch either way, so nothing about this transfers wrongly to a real 42-key
+harmonium. Not worth asking a learner to adjudicate.
 
 **Portrait on a tablet is decided by width, at 700 pt.** Doc 02 wants the rotate message on
 iPad portrait; doc 11 wants companion mode on iPhone portrait; doc 11's `sizeClass()`
