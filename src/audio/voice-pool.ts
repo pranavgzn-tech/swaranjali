@@ -21,6 +21,12 @@ class Voice {
   readonly #sources: SynthReedSource[];
   readonly #noise: KeyNoise;
 
+  /**
+   * The last key this voice played. It deliberately outlives the note, so the
+   * pool can order voices by age — which means it is *not* a statement that
+   * the voice is still sounding. Use `held`, or look the key up in the pool's
+   * map, for that.
+   */
   key: KeyId | null = null;
   /** Set while a finger is physically down. Never steal one of these. */
   held = false;
@@ -129,7 +135,15 @@ export class VoicePool {
 
     const voice = this.#claim(atTime);
     if (!voice) return;
-    if (voice.key !== null) this.#byKey.delete(voice.key);
+
+    // Only drop the old entry if it still points at *this* voice. `key` is the
+    // last key a voice played and outlives its release, so a voice being
+    // reused can easily be carrying a key that some other voice is now
+    // sounding — deleting that entry blindly loses the only handle on a note
+    // that is still playing, and it sticks forever.
+    const previous = voice.key;
+    if (previous !== null && this.#byKey.get(previous) === voice) this.#byKey.delete(previous);
+
     voice.noteOn(key, freqHz, atTime, pressure);
     this.#byKey.set(key, voice);
   }

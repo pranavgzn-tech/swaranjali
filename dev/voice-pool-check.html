@@ -1,0 +1,93 @@
+<!doctype html>
+<html>
+  <body>
+    <pre id="out">running…</pre>
+    <script type="module">
+      // Reproduces the stuck-note sequence reported from the device: a key
+      // played, released, played again on a different voice, then a third key
+      // claiming the first voice — which used to delete the map entry for the
+      // note still sounding, leaving it droning forever.
+      const log = [];
+      const say = (line) => {
+        log.push(line);
+        document.getElementById('out').textContent = log.join('\n');
+      };
+
+      const { Instrument } = await import('/src/audio/instrument.ts');
+      const { seededRandom } = await import('/src/audio/random.ts');
+      const { madhyaSa } = await import('/src/music/pitch.ts');
+
+      const SR = 48000;
+      const sa = madhyaSa(0);
+
+      async function run(script, seconds) {
+        const ctx = new OfflineAudioContext({ numberOfChannels: 2, length: SR * seconds, sampleRate: SR });
+        const inst = new Instrument(ctx, 'full', { assistMode: () => false, referenceA4: () => 440 }, seededRandom(1));
+        for (const [id, v] of Object.entries({ bass: 0.55, male: 1, female: 0.35, coupler: 0, reverb: 0.18, master: 0.8 })) {
+          inst.setFader(id, v);
+        }
+        inst.bellows.pressure = 1;
+        inst.bellows.step(1 / 60);
+        script(inst);
+        const buffer = await ctx.startRendering();
+        return { inst, buffer };
+      }
+
+      const rms = (data, from, to) => {
+        let sum = 0;
+        for (let i = from; i < to; i++) sum += data[i] * data[i];
+        return Math.sqrt(sum / Math.max(1, to - from));
+      };
+
+      // Control: a full reservoir and no notes at all. The air hiss is
+      // supposed to be audible, so this is the floor the tests compare
+      // against — not zero.
+      const quiet = await run(() => {}, 2.5);
+      const floor = rms(quiet.buffer.getChannelData(0), SR * 1.5, SR * 2.4);
+      say(`floor (air hiss, no notes): ${floor.toFixed(6)}`);
+
+      // The sequence that strands a note. It needs the pool to run out of
+      // never-used voices first, which is why it takes a minute of playing
+      // before it bites rather than showing up on the first note.
+      const stuckSequence = (i) => {
+        i.noteOn(sa);        // Sa lands on voice 0
+        i.noteOff(sa);       // released — voice 0 still carries Sa as its last key
+        i.noteOn(sa);        // Sa again, but voice 1 is free so it lands there
+        // Use up every remaining free voice, so the next claim has to reuse one.
+        for (let n = 2; n < 14; n++) {
+          i.noteOn(sa + n);
+          i.noteOff(sa + n);
+        }
+        i.noteOn(sa + 20);   // claims voice 0, whose last key is still Sa
+        i.noteOff(sa + 20);
+        i.noteOff(sa);       // must actually stop the Sa that voice 1 is holding
+      };
+
+      const { inst, buffer } = await run(stuckSequence, 2.5);
+
+      const data = buffer.getChannelData(0);
+      const tail = rms(data, SR * 1.5, SR * 2.4);
+      say(`voices still sounding: ${inst.activeVoices}`);
+      say(`tail rms after every note released: ${tail.toFixed(6)}`);
+      say(
+        tail < floor * 1.5 && inst.activeVoices === 0
+          ? 'PASS — nothing is stuck, the tail is just moving air'
+          : 'FAIL — a note is stuck',
+      );
+
+      // A held note must survive other voices being claimed around it.
+      const held = await run((i) => {
+        i.noteOn(sa);
+        i.noteOff(sa);
+        i.noteOn(sa);
+        i.noteOn(sa + 3);
+        i.noteOff(sa + 3);
+      }, 2.5);
+      const heldTail = rms(held.buffer.getChannelData(0), SR * 1.5, SR * 2.4);
+      say(`held note still sounding: ${held.inst.activeVoices} voice(s), tail rms ${heldTail.toFixed(4)}`);
+      say(held.inst.activeVoices === 1 && heldTail > 0.01 ? 'PASS — the held note kept playing' : 'FAIL — the held note was lost');
+
+      say('DONE');
+    </script>
+  </body>
+</html>
