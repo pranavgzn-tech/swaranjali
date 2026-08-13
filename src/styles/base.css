@@ -1,0 +1,54 @@
+/* iOS interference suppression, doc 05. Every rule here exists to stop Safari
+   doing something that would interrupt playing. */
+
+html,
+body,
+#app {
+  touch-action: none;
+  overscroll-behavior: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+  overflow: hidden;
+  position: fixed;
+  inset: 0;
+}
+
+body {
+  margin: 0;
+  background: var(--wood-deep);
+  color: var(--ivory);
+  font-family: var(--font-ui);
+  font-size: var(--size-body);
+  /* The instrument is a fixed layout; nothing scales with the system setting
+     because every position is computed in points. */
+  -webkit-text-size-adjust: 100%;
+}
+
+/* The stage is the usable area with the safe insets already removed. Layout
+   modules position everything inside it and never think about insets again. */
+.stage {
+  position: absolute;
+  inset: 0;
+  padding-top: var(--safe-top);
+  padding-right: var(--safe-right);
+  padding-bottom: var(--safe-bottom);
+  padding-left: var(--safe-left);
+  box-sizing: border-box;
+  height: 100dvh; /* not 100vh — vh is wrong on iOS with dynamic toolbars */
+}
+
+.stage__inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Key press feedback is functional and stays. Panels stop moving. */
+  .panel,
+  .sheet {
+    transition: none !important;
+  }
+}

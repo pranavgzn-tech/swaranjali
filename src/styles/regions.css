@@ -1,0 +1,81 @@
+/* Phase 0 region boxes. Deliberately plain — this is a measuring tool, not a
+   design. It is removed when the last real component lands in Phase 1. */
+
+.regions {
+  position: absolute;
+  inset: 0;
+}
+
+.region {
+  position: absolute;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  padding: 6px;
+  text-align: center;
+  border: 1px solid color-mix(in srgb, var(--brass) 55%, transparent);
+  background: color-mix(in srgb, var(--wood-body) 45%, transparent);
+  color: var(--ivory);
+  overflow: hidden;
+}
+
+.region--cloth {
+  background: color-mix(in srgb, var(--cloth) 55%, transparent);
+}
+
+.region--ivory {
+  background: color-mix(in srgb, var(--ivory) 12%, transparent);
+}
+
+.region--brass {
+  background: color-mix(in srgb, var(--brass) 14%, transparent);
+}
+
+.region__name {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--brass-bright);
+}
+
+.region__size {
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+}
+
+.region__note {
+  font-size: 11px;
+  color: var(--ink-soft);
+  max-width: 92%;
+}
+
+/* Fader centre ticks, so the master gap is visible on the device. */
+.tick {
+  position: absolute;
+  width: 1px;
+  background: color-mix(in srgb, var(--brass-bright) 60%, transparent);
+}
+
+.readout {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--brass);
+  background: color-mix(in srgb, var(--wood-deep) 82%, transparent);
+  white-space: pre;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.readout--compact {
+  font-size: 9px;
+  padding: 2px 6px;
+}

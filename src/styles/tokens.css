@@ -1,0 +1,43 @@
+/* Palette and type scale from docs/06-visual-design.md. These are the only
+   colours in the app — nothing outside this file introduces a new one. */
+
+:root {
+  --wood-deep: #2a1a12; /* cabinet shadow, app background */
+  --wood-body: #4a2e1d; /* main rosewood body */
+  --wood-lit: #6b452c; /* top surfaces catching light */
+  --brass: #b8874a; /* hardware, fader caps, active states */
+  --brass-bright: #e0ae6b; /* the sounding / active accent */
+  --ivory: #ede4d2; /* white keys */
+  --ivory-dim: #c9bca4; /* white key shadow edge */
+  --ebony: #171310; /* black keys */
+  --cloth: #4a1f2b; /* bellows / pump surface, deep maroon */
+  --ink: #1a1512; /* label text on light surfaces */
+  --ink-soft: #8c7a63; /* secondary labels */
+  --paper: #e8dcc4; /* notation panel background */
+
+  /* Type scale in points, doc 06. Compact overrides live in the layout that
+     needs them, not here. */
+  --size-sargam: 26px;
+  --size-western: 15px;
+  --size-fader-label: 13px;
+  --size-panel-heading: 21px;
+  --size-body: 16px;
+  --size-matra: 32px;
+
+  --font-display: 'Swaranjali Serif', ui-serif, Georgia, serif;
+  --font-ui: 'Swaranjali Sans', ui-sans-serif, -apple-system, system-ui, sans-serif;
+
+  /* Motion, doc 06. Key press is functional feedback and survives
+     prefers-reduced-motion; panel transitions do not. */
+  --ease-key: cubic-bezier(0.2, 0.8, 0.3, 1);
+  --dur-key: 60ms;
+  --dur-panel: 180ms;
+  --dur-sounding: 40ms;
+
+  /* Live safe-area insets, mirrored into custom properties so layout code can
+     read one source. Updated by ui/size-class.ts on every viewport change. */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+}
