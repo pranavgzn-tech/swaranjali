@@ -1,0 +1,105 @@
+<!doctype html>
+<html>
+  <body>
+    <pre id="out">running…</pre>
+    <script type="module">
+      // Doc 09: the taal must stay in time for five continuous minutes with no
+      // audible drift, and a tempo change must land on the next matra rather
+      // than mid-beat. Both are timing claims, so both get measured.
+      const log = [];
+      const say = (l) => {
+        log.push(l);
+        document.getElementById('out').textContent = log.join('\n');
+      };
+
+      const { TaalEngine } = await import('/src/audio/taal-engine.ts');
+      const { Lookahead } = await import('/src/audio/scheduler.ts');
+      const { taalById } = await import('/src/music/taal.ts');
+
+      // A stand-in clock and drum: this is about when beats are placed, not
+      // what they sound like.
+      const fakeTabla = { play() {}, silence() {} };
+      function engineAt(startTime) {
+        let now = startTime;
+        const clock = { get now() { return now; } };
+        const engine = new TaalEngine(clock, fakeTabla);
+        return { engine, advance: (t) => { now = t; } };
+      }
+
+      const teentaal = taalById('teentaal');
+
+      // 1. Five minutes at 80 bpm, scheduled in 100 ms windows as the real
+      //    lookahead does. Every beat must land where arithmetic says.
+      const { engine, advance } = engineAt(0);
+      engine.setTaal(teentaal);
+      engine.setBpm(80);
+      engine.start();
+
+      const beats = [];
+      engine.scheduled.on((e) => beats.push(e));
+
+      const MINUTES = 5;
+      for (let t = 0; t < MINUTES * 60; t += 0.025) {
+        advance(t);
+        engine.schedule(t + 0.1);
+      }
+
+      const spacing = 60 / 80;
+      const first = beats[0].atTime;
+      let worst = 0;
+      for (let i = 0; i < beats.length; i++) {
+        worst = Math.max(worst, Math.abs(beats[i].atTime - (first + i * spacing)));
+      }
+      say(`beats scheduled over ${MINUTES} minutes: ${beats.length}`);
+      say(`expected: ${Math.round((MINUTES * 60) / spacing)} give or take one`);
+      say(`worst deviation from the grid: ${(worst * 1000).toFixed(4)} ms  ${worst < 0.001 ? 'PASS' : 'FAIL — it drifts'}`);
+
+      // 2. The cycle must stay aligned: beat 1 of every cycle is sam.
+      const samBeats = beats.filter((b) => b.isSam);
+      const samGaps = new Set(samBeats.slice(1).map((b, i) => Math.round((b.atTime - samBeats[i].atTime) * 1000)));
+      say(`sam landed ${samBeats.length} times, gaps seen: ${[...samGaps].join(', ')} ms`);
+      say(`cycle length holds: ${samGaps.size === 1 ? 'PASS' : 'FAIL — the cycle changed length'}`);
+
+      // 3. The matra numbers must cycle 1..16 in order, without slipping.
+      let ordered = true;
+      for (let i = 1; i < beats.length; i++) {
+        const expected = (beats[i - 1].matra % teentaal.matras) + 1;
+        if (beats[i].matra !== expected) ordered = false;
+      }
+      say(`matra numbering stays in order: ${ordered ? 'PASS' : 'FAIL'}`);
+
+      // 4. A tempo change must not shorten the beat already sounding.
+      const second = engineAt(0);
+      second.engine.setTaal(teentaal);
+      second.engine.setBpm(60);
+      second.engine.start();
+      const changed = [];
+      second.engine.scheduled.on((e) => changed.push(e));
+
+      for (let t = 0; t < 4; t += 0.025) {
+        second.advance(t);
+        second.engine.schedule(t + 0.1);
+      }
+      const beforeCount = changed.length;
+      second.engine.setBpm(120);
+      for (let t = 4; t < 10; t += 0.025) {
+        second.advance(t);
+        second.engine.schedule(t + 0.1);
+      }
+
+      const lastOld = changed[beforeCount - 1];
+      const firstNew = changed[beforeCount];
+      const gap = firstNew.atTime - lastOld.atTime;
+      say(`tempo changed 60 -> 120 bpm mid-cycle`);
+      say(`beat spanning the change: ${(gap * 1000).toFixed(0)} ms`);
+      say(
+        `the sounding beat kept its length: ${Math.abs(gap - 1.0) < 0.02 ? 'PASS' : `FAIL — it became ${gap.toFixed(3)} s`}`,
+      );
+
+      const afterGap = changed[beforeCount + 1].atTime - firstNew.atTime;
+      say(`the beat after it: ${(afterGap * 1000).toFixed(0)} ms  ${Math.abs(afterGap - 0.5) < 0.02 ? 'PASS — new tempo' : 'FAIL'}`);
+
+      say('DONE');
+    </script>
+  </body>
+</html>

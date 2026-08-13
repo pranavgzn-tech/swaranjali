@@ -213,6 +213,22 @@ export const TANPURA = {
 } as const;
 
 /**
+ * Tabla. Doc 03 names the model — a pitched membrane, a short tone dropping
+ * rapidly in pitch plus filtered noise, dayan tuned to Sa — but not its
+ * numbers, so these are tuned by ear and recorded in DECISIONS.md.
+ */
+export const TABLA = {
+  voices: 8, // pre-allocated; a stroke retunes one rather than building one
+  level: 0.5,
+  attackMs: 2,
+  slapMs: 26, // the hand on the head, short whether or not the tone rings
+  noiseQ: 1.4,
+  bayanRatio: 0.5, // the left drum sits an octave below the tuned one
+  /** How much of a matra a compound bol's strokes spread across. */
+  compoundSpread: 0.75,
+} as const;
+
+/**
  * Faders that are present in the mixer but not yet live, and are drawn as
  * such. The three drone stops came alive in Phase 2; the tanpura has not,
  * because its string model is not finished — see DECISIONS.md.

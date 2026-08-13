@@ -12,11 +12,13 @@ import { BANK_IDS, PRESSURE, VOICE_POOL, type BankId, type FaderId } from '../co
 import { BELLOWS } from '../config/audio.ts';
 import { COMPACT_AUDIO, type AudioTier, type OutputRoute } from '../config/compact-audio.ts';
 import { REVERB } from '../config/audio.ts';
-import { frequencyOf, REFERENCE_A4_DEFAULT } from '../music/pitch.ts';
+import { frequencyOf, madhyaSa, REFERENCE_A4_DEFAULT } from '../music/pitch.ts';
 import { Bellows } from './bellows.ts';
 import { Body } from './body.ts';
 import { Drone, type DroneNote } from './drone.ts';
 import { Mixer } from './mixer.ts';
+import { Tabla } from './percussion.ts';
+import { TaalEngine } from './taal-engine.ts';
 import { createNoiseSource } from './noise.ts';
 import { Lookahead } from './scheduler.ts';
 import { Tanpura } from './tanpura.ts';
@@ -40,6 +42,8 @@ export class Instrument {
   readonly drone: Drone;
   readonly tanpura: Tanpura;
   readonly clock: Lookahead;
+  readonly tabla: Tabla;
+  readonly taal: TaalEngine;
   readonly tier: AudioTier;
 
   readonly #ctx: AudioContext;
@@ -124,6 +128,8 @@ export class Instrument {
 
     this.clock = new Lookahead(ctx);
     this.tanpura = new Tanpura(ctx, noise, this.body.droneBus, random);
+    this.tabla = new Tabla(ctx, noise, this.body.tablaBus);
+    this.taal = new TaalEngine(this.clock, this.tabla);
 
     this.mixer.route({
       drone: (id, shaped) => this.drone.setLevel(id, shaped),
@@ -152,8 +158,8 @@ export class Instrument {
   /** Start the bellows loop. Nothing sounds until the reservoir has air. */
   start(): void {
     this.bellows.start();
-    // The clock runs for the taal engine next; the tanpura is not on it yet.
-    this.clock.start(() => {});
+    // The tanpura is not on the clock yet; the taal engine is.
+    this.clock.start((horizon) => this.taal.schedule(horizon));
     this.retune();
   }
 
@@ -163,6 +169,8 @@ export class Instrument {
     const a4 = this.#inputs.referenceA4();
     this.drone.setTuning(sa, a4);
     this.drone.setNote(this.#inputs.droneNote());
+    // A player tunes the dayan to the singer's Sa.
+    this.tabla.setSa(frequencyOf(madhyaSa(sa), 0, a4));
   }
 
   /**
@@ -183,6 +191,7 @@ export class Instrument {
     this.#voices.silenceAll();
     this.drone.silenceAll();
     this.tanpura.silence();
+    this.tabla.silence();
   }
 
   setFader(id: FaderId, value: number): void {
