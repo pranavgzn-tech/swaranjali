@@ -60,6 +60,62 @@
   </head>
   <body>
     <div id="app"></div>
+
+    <!--
+      Boot guard. Deliberately inline and deliberately first, so it still runs
+      when the module bundle does not: a cache-first service worker can pin a
+      device to a stale shell, and the failure looked like a black screen with
+      nothing to read. An instrument may fail, but it must always say so.
+    -->
+    <script>
+      (function () {
+        var reset = /[?&]reset\b/.test(location.search);
+
+        function show(message, detail) {
+          var app = document.getElementById('app');
+          if (!app || app.dataset.booted === 'yes') return;
+          app.innerHTML =
+            '<div class="bootfail">' +
+            '<p class="bootfail__line">' + message + '</p>' +
+            (detail ? '<pre class="bootfail__detail">' + String(detail).slice(0, 400) + '</pre>' : '') +
+            '<a class="bootfail__button" href="?reset=1">Clear and reload</a>' +
+            '</div>';
+        }
+
+        if (reset) {
+          var done = function () {
+            location.replace(location.pathname);
+          };
+          var jobs = [];
+          if (navigator.serviceWorker) {
+            jobs.push(
+              navigator.serviceWorker.getRegistrations().then(function (all) {
+                return Promise.all(all.map(function (r) { return r.unregister(); }));
+              })
+            );
+          }
+          if (window.caches) {
+            jobs.push(
+              caches.keys().then(function (keys) {
+                return Promise.all(keys.map(function (k) { return caches.delete(k); }));
+              })
+            );
+          }
+          Promise.all(jobs).then(done, done);
+          return;
+        }
+
+        window.addEventListener('error', function (event) {
+          show('Swaranjali could not start.', event.message || (event.error && event.error.message));
+        });
+
+        // If nothing has rendered after a few seconds, the bundle never ran.
+        setTimeout(function () {
+          show('Swaranjali could not start. This is usually a stale offline copy.');
+        }, 5000);
+      })();
+    </script>
+
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

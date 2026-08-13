@@ -71,3 +71,46 @@
   margin: 0;
   font-size: var(--size-body);
 }
+
+/* The boot guard's message. Styled here for the normal case, but the markup
+   carries no dependencies — if the bundle failed, this CSS may be missing too,
+   and the text still has to be readable on the dark background. */
+.bootfail {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 14px;
+  padding: 32px;
+  text-align: center;
+  color: #ede4d2;
+  background: #2a1a12;
+  font-family: ui-sans-serif, -apple-system, system-ui, sans-serif;
+}
+
+.bootfail__line {
+  margin: 0;
+  font-size: 17px;
+}
+
+.bootfail__detail {
+  margin: 0;
+  max-width: 90vw;
+  overflow-x: auto;
+  font-size: 12px;
+  color: #8c7a63;
+  white-space: pre-wrap;
+}
+
+.bootfail__button {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  padding: 0 18px;
+  border-radius: 8px;
+  border: 1px solid #b8874a;
+  color: #e0ae6b;
+  text-decoration: none;
+  font-size: 16px;
+}

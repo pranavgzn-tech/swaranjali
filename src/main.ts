@@ -61,6 +61,9 @@ function boot(): void {
   const root = document.getElementById('app');
   if (!root) throw new Error('#app is missing from index.html');
 
+  // Tells the inline boot guard in index.html to stand down.
+  root.dataset['booted'] = 'yes';
+
   suppressGestures();
   watchContextLifecycle();
   watchViewport();

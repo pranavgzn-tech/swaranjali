@@ -15,6 +15,8 @@ const sw = self as unknown as ServiceWorkerGlobalScope;
 const BUILD_HASH = '__BUILD_HASH__';
 const PRECACHE: string[] = ['__PRECACHE__'];
 const CACHE = `swaranjali-${BUILD_HASH}`;
+/** Where this worker is registered, e.g. '/swaranjali/'. */
+const scopePath = new URL(sw.registration.scope).pathname;
 
 sw.addEventListener('install', (event) => {
   // No skipWaiting here. Doc 12 is explicit that the app must never swap
@@ -38,7 +40,13 @@ sw.addEventListener('fetch', (event) => {
   if (new URL(request.url).origin !== location.origin) return; // there should be none
 
   if (request.mode === 'navigate') {
-    event.respondWith(caches.match('./index.html').then((hit) => hit ?? fetch(request)));
+    // A navigation to a real precached page gets that page; everything else
+    // falls back to the app shell. Serving index.html for *every* navigation
+    // means no other page on this origin can ever be reached, including the
+    // ones that exist to diagnose a broken shell.
+    const path = `.${new URL(request.url).pathname.slice(scopePath.length - 1)}`;
+    const target = PRECACHE.includes(path) ? path : './index.html';
+    event.respondWith(caches.match(target).then((hit) => hit ?? fetch(request)));
     return;
   }
 
