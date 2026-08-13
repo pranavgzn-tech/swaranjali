@@ -6,7 +6,7 @@
  * track the finger exactly.
  */
 
-import { FADER_ORDER, PHASE_2_FADERS, type FaderId } from '../config/audio.ts';
+import { FADER_ORDER, PENDING_FADERS, type FaderId } from '../config/audio.ts';
 import { MIXER } from '../config/layout.ts';
 
 /** Doc 02's mixer strip, in order. */
@@ -99,7 +99,7 @@ export class StopMixer {
     column.dataset['fader'] = id;
     column.style.left = `${centre - MIXER.faderPitch / 2}px`;
     column.style.width = `${MIXER.faderPitch}px`;
-    if (PHASE_2_FADERS.includes(id)) column.classList.add('fader--pending');
+    if (PENDING_FADERS.includes(id)) column.classList.add('fader--pending');
     if (id === 'master') column.classList.add('fader--master');
 
     const track = document.createElement('div');
@@ -144,9 +144,9 @@ export class StopMixer {
 
     const id = this.#faderFrom(event.target);
     if (!id) return;
-    // Faders 5–8 arrive in Phase 2. They are visible so the instrument reads
-    // correctly, but they do not move yet.
-    if (PHASE_2_FADERS.includes(id)) return;
+    // Some stops are visible but not yet live, so the instrument reads
+    // correctly while it is being built.
+    if (PENDING_FADERS.includes(id)) return;
 
     event.preventDefault();
     this.#dragging.set(event.pointerId, id);

@@ -121,6 +121,23 @@ export class SynthReedSource implements ToneSource {
     gain.exponentialRampToValueAtTime(this.#peak, atTime + (attack.gainMs + this.#attackExtraMs) / 1000);
   }
 
+  /**
+   * Change pitch without re-articulating. A drone that is already sounding
+   * follows a change of Sa; it does not start again, and it does not scoop —
+   * doc 03 gives the scoop to the first onset only.
+   */
+  retune(freqHz: number, atTime: number): void {
+    const frequency = freqHz * this.#ratio;
+    for (const osc of this.#oscillators) {
+      osc.frequency.setTargetAtTime(frequency, atTime, 0.02);
+    }
+  }
+
+  /** True while this source is speaking, so the bellows can count it. */
+  get sounding(): boolean {
+    return this.#gain.gain.value > GAIN_FLOOR;
+  }
+
   noteOff(atTime: number): void {
     const gain = this.#gain.gain;
     const release = atTime + RELEASE.gainMs / 1000;

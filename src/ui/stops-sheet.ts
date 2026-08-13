@@ -7,7 +7,7 @@
  * the stops, which is exactly when you want to hear them.
  */
 
-import { FADER_ORDER, PHASE_2_FADERS, type FaderId } from '../config/audio.ts';
+import { FADER_ORDER, PENDING_FADERS, type FaderId } from '../config/audio.ts';
 import { COMPACT_TYPE } from '../config/compact.ts';
 import { TOUCH } from '../config/layout.ts';
 
@@ -73,7 +73,7 @@ export class StopsSheet {
     row.className = 'sheet__row';
     row.dataset['fader'] = id;
     row.style.minHeight = `${TOUCH.minButton}px`;
-    if (PHASE_2_FADERS.includes(id)) row.classList.add('sheet__row--pending');
+    if (PENDING_FADERS.includes(id)) row.classList.add('sheet__row--pending');
 
     const label = document.createElement('span');
     label.className = 'sheet__label';
@@ -123,7 +123,7 @@ export class StopsSheet {
 
   #down = (event: PointerEvent): void => {
     const id = this.#faderFrom(event.target);
-    if (!id || PHASE_2_FADERS.includes(id)) return;
+    if (!id || PENDING_FADERS.includes(id)) return;
     const row = event.target instanceof HTMLElement ? event.target.closest('.sheet__row') : null;
     if (!(row instanceof HTMLElement)) return;
 

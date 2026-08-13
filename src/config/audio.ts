@@ -188,10 +188,33 @@ export const LINEAR_FADERS: readonly FaderId[] = ['reverb'] as const;
 /** What a mechanical coupler does: the same note an octave up, on the male bank. */
 export const COUPLER = { semitones: +12, extraAttackMs: 8, levelDb: -3 } as const;
 
-/** Faders 5–8 are Phase 2. Present in the mixer, inert until then. */
-export const PHASE_2_FADERS: readonly FaderId[] = [
-  'droneSaMandra',
-  'droneSaMadhya',
-  'dronePaMa',
-  'tanpura',
-] as const;
+/**
+ * Tanpura, doc 03: Karplus-Strong with a bridge nonlinearity for the jawari
+ * buzz, four strings cycling with a slightly human pluck interval.
+ *
+ * The loop values are not in the spec — doc 03 names the model rather than its
+ * coefficients — so they are tuned by ear and recorded in DECISIONS.md.
+ */
+export const TANPURA = {
+  pluckMinS: 1.1,
+  pluckMaxS: 1.6,
+  pluckMs: 6, // length of the noise burst that excites a string
+  pluckGain: 0.5,
+  feedback: 0.988, // just under 1: the string rings for several seconds
+  dampingHz: 2600, // high partials die away first, as on a real string
+  // Maximally flat. A biquad lowpass at the default Q of 1 has a resonant
+  // peak of about 1.15 just below its cutoff, and inside a feedback loop that
+  // is enough to push the gain above 1 and turn the string into an oscillator.
+  dampingQ: 0.707,
+  dcBlockHz: 45, // a string cannot hold a constant displacement, and neither can the loop
+  jawariDrive: 1.9, // how hard the string is folded against the bridge
+  jawariFold: 0.55, // how much of the signal stays linear
+  jawariCurvePoints: 2048,
+} as const;
+
+/**
+ * Faders that are present in the mixer but not yet live, and are drawn as
+ * such. The three drone stops came alive in Phase 2; the tanpura has not,
+ * because its string model is not finished — see DECISIONS.md.
+ */
+export const PENDING_FADERS: readonly FaderId[] = ['tanpura'] as const;

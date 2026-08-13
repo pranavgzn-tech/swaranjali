@@ -36,6 +36,8 @@ export class App {
       {
         assistMode: () => this.settings.current.assistMode,
         referenceA4: () => this.settings.current.referenceA4,
+        sa: () => this.settings.current.sa,
+        droneNote: () => this.settings.current.droneNote,
       },
       random,
     );
@@ -106,6 +108,9 @@ export class App {
   /** Push the stored settings into the audio graph. */
   applySettings(): void {
     const settings = this.settings.current;
+    // Tuning first: a fader that starts a drone should start it at the right
+    // pitch rather than sliding into it.
+    this.instrument.retune();
     for (const id of FADER_ORDER) {
       this.instrument.setFader(id, settings.faders[id]);
     }

@@ -140,3 +140,30 @@ Devanagari face is subset to the seven sargam syllables (1.8 KB) and gated by
 
 `scripts/fetch-fonts.ts` re-fetches them, but it is **not** part of the build: the files are
 committed, because the build must not need the network any more than the app does.
+
+## Phase 2
+
+**The drone stops run through the instrument bus, not the drone bus.** Doc 03's diagram has
+a separate drone bus joining after the body and the pressure gain, but the same doc says the
+drone stops are "sustained harmonium reeds… same engine" that "draw air from the reservoir
+like any other note". Those two cannot both be true of the routing, and the prose is the
+stronger claim: reeds are reeds, so they get the body colouring, the saturation and the
+pressure response exactly as a keyed note does. The tanpura, which is not a reed and does not
+draw air, uses the separate bus as drawn.
+
+Measured: with one drone stop up, a full reservoir empties in 8.6 s instead of 17.2 s, and a
+drone with no air in the reservoir is silent.
+
+**The tanpura is built but not switched on.** Its fader is drawn as not-yet-live, like the
+Phase 1 stops were. The Karplus-Strong loop does not decay: a single pluck grows instead of
+dying away, and with nothing nonlinear to clamp it the loop reaches infinity and the whole
+mix goes to NaN. Three things were tried and measured — normalising the bridge shaper so its
+slope through zero is 1, flattening the damping filter to remove its resonant peak, and
+adding a DC blocker inside the loop, since a lowpass passes DC at full gain and a burst of
+noise carries an offset. None of them made a plucked string decay.
+
+Doc 10 says to say so and stop rather than ship a bad one, so that is what this is. The model
+and the measurements are in the repo (`src/audio/tanpura.ts`, `dev/phase2-check.html`); the
+fader stays inert until a single pluck measurably decays. My reading is that the remaining
+gain is coming from the delay line being retuned while it is inside the loop, and the next
+thing to try is a fixed-length delay with the pitch trimmed by an allpass instead.

@@ -1,0 +1,113 @@
+<!doctype html>
+<html>
+  <body>
+    <pre id="out">running…</pre>
+    <script type="module">
+      const log = [];
+      const say = (line) => {
+        log.push(line);
+        document.getElementById('out').textContent = log.join('\n');
+      };
+
+      const { Instrument } = await import('/src/audio/instrument.ts');
+      const { seededRandom } = await import('/src/audio/random.ts');
+      const { Bellows } = await import('/src/audio/bellows.ts');
+      const { FADER_DEFAULTS } = await import('/src/config/audio.ts');
+
+      const SR = 48000;
+      const OFF = { bass: 0, male: 0, female: 0, coupler: 0, reverb: 0, master: 0.8 };
+
+      async function render({ faders, pressure = 1, seconds = 4, scheduleUntil }) {
+        const ctx = new OfflineAudioContext({ numberOfChannels: 2, length: SR * seconds, sampleRate: SR });
+        const inst = new Instrument(
+          ctx,
+          'full',
+          { assistMode: () => false, referenceA4: () => 440, sa: () => 0, droneNote: () => 'pa' },
+          seededRandom(7),
+        );
+        inst.retune();
+        inst.bellows.pressure = pressure;
+        inst.bellows.step(1 / 60);
+        for (const [id, v] of Object.entries(faders)) inst.setFader(id, v);
+        // The tanpura is plucked by the lookahead clock, which needs a real
+        // timer; offline, schedule up front instead. A short horizon yields a
+        // single pluck, which is how a decay can be measured at all.
+        inst.tanpura.schedule(scheduleUntil ?? seconds);
+        return { inst, buffer: await ctx.startRendering() };
+      }
+
+      const rms = (d, from, to) => {
+        let s = 0;
+        for (let i = from; i < to; i++) s += d[i] * d[i];
+        return Math.sqrt(s / Math.max(1, to - from));
+      };
+      const peak = (d, from, to) => {
+        let p = 0;
+        for (let i = from; i < to; i++) p = Math.max(p, Math.abs(d[i]));
+        return p;
+      };
+
+      // Floor: full reservoir, nothing turned up. Air hiss is meant to be here.
+      const floor = await render({ faders: OFF });
+      const floorRms = rms(floor.buffer.getChannelData(0), SR * 2, SR * 3.5);
+      say(`floor (air only):            rms ${floorRms.toFixed(5)}`);
+
+      // 1. A drone stop with air in the reservoir should sound.
+      const drone = await render({ faders: { ...OFF, droneSaMadhya: 0.8 } });
+      const droneRms = rms(drone.buffer.getChannelData(0), SR * 2, SR * 3.5);
+      say(`drone Sa, with air:          rms ${droneRms.toFixed(5)}  ${droneRms > floorRms * 5 ? 'PASS' : 'FAIL'}`);
+
+      // 2. It is a reed, so with no air it must be silent.
+      const droneNoAir = await render({ faders: { ...OFF, droneSaMadhya: 0.8 }, pressure: 0 });
+      const droneNoAirRms = rms(droneNoAir.buffer.getChannelData(0), SR * 2, SR * 3.5);
+      say(`drone Sa, no air:            rms ${droneNoAirRms.toFixed(5)}  ${droneNoAirRms < 0.001 ? 'PASS' : 'FAIL'}`);
+
+      // 3. The drone draws air: the reservoir must empty faster with it up.
+      function drainSeconds(droneCount) {
+        const b = new Bellows(
+          { soundingNotes: () => droneCount, bankLevel: (id) => FADER_DEFAULTS[id], assistMode: () => false },
+          () => {},
+        );
+        b.pressure = 1;
+        let t = 0;
+        while (b.speaking && t < 120) {
+          b.step(1 / 60);
+          t += 1 / 60;
+        }
+        return t;
+      }
+      const silent = drainSeconds(0);
+      const withDrone = drainSeconds(1);
+      say(`reservoir, nothing sounding: ${silent.toFixed(1)} s`);
+      say(`reservoir, one drone up:     ${withDrone.toFixed(1)} s  ${withDrone < silent * 0.85 ? 'PASS — it drinks air' : 'FAIL'}`);
+
+      // 4. The tanpura should ring, and keep ringing between plucks.
+      const tanpura = await render({ faders: { ...OFF, tanpura: 0.9 }, seconds: 5 });
+      const data = tanpura.buffer.getChannelData(0);
+      const early = rms(data, SR * 0.2, SR * 0.6);
+      const late = rms(data, SR * 3.5, SR * 4.8);
+      say(`tanpura, first pluck:        rms ${early.toFixed(5)}  peak ${peak(data, 0, SR * 5).toFixed(3)}`);
+      say(`tanpura, still ringing late: rms ${late.toFixed(5)}  ${late > 0.002 ? 'PASS' : 'FAIL — it died'}`);
+      say(`tanpura stays in range:      ${peak(data, 0, SR * 5) < 1.2 ? 'PASS' : 'FAIL — the loop is running away'}`);
+
+      // 4b. It must behave like a string that was struck: a single pluck has
+      // to decay. A self-oscillating loop sustains instead, and sounds like a
+      // buzz rather than an instrument — measure it rather than trust it.
+      const onePluck = await render({ faders: { ...OFF, tanpura: 0.9 }, seconds: 6, scheduleUntil: 0.06 });
+      const single = onePluck.buffer.getChannelData(0);
+      const struck = rms(single, SR * 0.1, SR * 0.5);
+      const decayed = rms(single, SR * 4.5, SR * 5.9);
+      say(`tanpura, one pluck struck:   rms ${struck.toFixed(5)}`);
+      say(
+        `tanpura, same pluck 5 s on:  rms ${decayed.toFixed(5)}  ${decayed < struck * 0.5 ? 'PASS — it decays' : 'FAIL — self-oscillating'}`,
+      );
+
+      // 5. It is not a reed, so it must sound with an empty reservoir.
+      const tanpuraNoAir = await render({ faders: { ...OFF, tanpura: 0.9 }, pressure: 0, seconds: 4 });
+      const noAir = rms(tanpuraNoAir.buffer.getChannelData(0), SR * 1, SR * 3);
+      say(`tanpura, no air:             rms ${noAir.toFixed(5)}  ${noAir > 0.002 ? 'PASS — does not need air' : 'FAIL'}`);
+
+      say('DONE');
+    </script>
+  </body>
+</html>

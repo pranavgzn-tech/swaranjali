@@ -15,8 +15,11 @@ import { REVERB } from '../config/audio.ts';
 import { frequencyOf, REFERENCE_A4_DEFAULT } from '../music/pitch.ts';
 import { Bellows } from './bellows.ts';
 import { Body } from './body.ts';
+import { Drone, type DroneNote } from './drone.ts';
 import { Mixer } from './mixer.ts';
 import { createNoiseSource } from './noise.ts';
+import { Lookahead } from './scheduler.ts';
+import { Tanpura } from './tanpura.ts';
 import { VoicePool, type KeyId } from './voice-pool.ts';
 import { buildReedWaves } from './wavetables.ts';
 
@@ -26,12 +29,17 @@ const PRESSURE_SMOOTHING = 0.01;
 export interface InstrumentInputs {
   assistMode(): boolean;
   referenceA4(): number;
+  sa(): number;
+  droneNote(): DroneNote;
 }
 
 export class Instrument {
   readonly mixer: Mixer;
   readonly bellows: Bellows;
   readonly body: Body;
+  readonly drone: Drone;
+  readonly tanpura: Tanpura;
+  readonly clock: Lookahead;
   readonly tier: AudioTier;
 
   readonly #ctx: AudioContext;
@@ -101,9 +109,35 @@ export class Instrument {
       random,
     );
 
+    // Drone reeds are reeds: they run through the instrument bus so the body,
+    // the saturation and the air pressure shape them exactly as they shape a
+    // keyed note. The tanpura is not a reed and joins further down, past all
+    // of that, because none of it should colour a plucked string.
+    this.drone = new Drone(ctx, {
+      waves: buildReedWaves(ctx),
+      oscCount: lite ? COMPACT_AUDIO.oscPerBank : VOICE_POOL.oscPerBank,
+      cutoffSignals,
+      pitchCentsSignal: this.#pitchCentsSignal,
+      destination: this.body.instrumentBus,
+      random,
+    });
+
+    this.clock = new Lookahead(ctx);
+    this.tanpura = new Tanpura(ctx, noise, this.body.droneBus, random);
+
+    this.mixer.route({
+      drone: (id, shaped) => this.drone.setLevel(id, shaped),
+      // The tanpura fader is deliberately not wired yet: its string model
+      // still runs away rather than decaying. Built, measured, not shipped —
+      // see DECISIONS.md.
+      tanpura: () => {},
+    });
+
     this.bellows = new Bellows(
       {
-        soundingNotes: () => this.#voices.activeCount,
+        // Drone reeds draw air like any other note — authentic, and the first
+        // thing that explains why the reservoir empties faster with them up.
+        soundingNotes: () => this.#voices.activeCount + this.drone.activeCount,
         bankLevel: (bank) => this.mixer.bankLevel(bank),
         assistMode: () => this.#inputs.assistMode(),
       },
@@ -118,6 +152,17 @@ export class Instrument {
   /** Start the bellows loop. Nothing sounds until the reservoir has air. */
   start(): void {
     this.bellows.start();
+    // The clock runs for the taal engine next; the tanpura is not on it yet.
+    this.clock.start(() => {});
+    this.retune();
+  }
+
+  /** Sa or the reference pitch changed; the drone and tanpura follow. */
+  retune(): void {
+    const sa = this.#inputs.sa();
+    const a4 = this.#inputs.referenceA4();
+    this.drone.setTuning(sa, a4);
+    this.drone.setNote(this.#inputs.droneNote());
   }
 
   /**
@@ -136,6 +181,8 @@ export class Instrument {
   /** Release every voice — panic, interruption, or rotation. */
   silenceAll(): void {
     this.#voices.silenceAll();
+    this.drone.silenceAll();
+    this.tanpura.silence();
   }
 
   setFader(id: FaderId, value: number): void {
@@ -163,6 +210,7 @@ export class Instrument {
     this.#hissGain.gain.setTargetAtTime(pressure * PRESSURE.hissLevel, now, PRESSURE_SMOOTHING);
     this.body.setPressure(speaking ? pressure : 0, now, speaking ? PRESSURE_SMOOTHING : this.#fadeOut);
     this.#voices.setPressure(pressure);
+    this.drone.setPressure(pressure);
   }
 }
 

@@ -18,6 +18,9 @@ export class Mixer {
   readonly #buses: Record<VoiceBus, GainNode>;
   readonly #body: Body;
   readonly #values = new Map<FaderId, number>();
+  /** Set by the instrument once the drone and tanpura exist. */
+  #onDrone: ((id: FaderId, shaped: number) => void) | null = null;
+  #onTanpura: ((shaped: number) => void) | null = null;
 
   constructor(ctx: AudioContext, body: Body) {
     this.#body = body;
@@ -59,14 +62,21 @@ export class Mixer {
       case 'master':
         this.#body.setMasterGain(shaped);
         return;
-      // Faders 5–8 are Phase 2. They store a value so settings round-trip,
-      // but nothing is listening to them yet.
       case 'droneSaMandra':
       case 'droneSaMadhya':
       case 'dronePaMa':
+        this.#onDrone?.(id, shaped);
+        return;
       case 'tanpura':
+        this.#onTanpura?.(shaped);
         return;
     }
+  }
+
+  /** Wired once at boot, after the drone and tanpura have been built. */
+  route(handlers: { drone: (id: FaderId, shaped: number) => void; tanpura: (shaped: number) => void }): void {
+    this.#onDrone = handlers.drone;
+    this.#onTanpura = handlers.tanpura;
   }
 
   /** How much air each bank is drawing, for the bellows model. */
