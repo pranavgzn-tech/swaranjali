@@ -6,13 +6,14 @@
   "description": "A digital harmonium for solo practice of Indian music",
   "scripts": {
     "dev": "vite",
-    "build": "npm run typecheck && npm run check-layout && npm run gen-assets && vite build && npm run build-sw && npm run gen-precache",
+    "build": "npm run typecheck && npm run check-layout && npm run validate-data && npm run gen-assets && vite build && npm run build-sw && npm run gen-precache",
     "build-sw": "tsc -p pwa",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit && tsc -p pwa --noEmit",
     "check-layout": "node --experimental-strip-types scripts/check-layout.ts",
     "gen-assets": "node --experimental-strip-types scripts/gen-assets.ts",
-    "gen-precache": "node --experimental-strip-types scripts/gen-precache.ts"
+    "gen-precache": "node --experimental-strip-types scripts/gen-precache.ts",
+    "validate-data": "node --experimental-strip-types scripts/validate-data.ts"
   },
   "devDependencies": {
     "@types/node": "^26.2.0",
