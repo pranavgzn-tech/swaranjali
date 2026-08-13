@@ -9,8 +9,10 @@ import { KEYBOARD, KEYBOARD_MODES, PUMP } from '../../config/layout.ts';
 import { TYPE } from '../../config/theme.ts';
 import { Keyboard } from '../keyboard.ts';
 import { buildKeyLayout, windowStart } from '../keyboard-model.ts';
+import { playableTaals } from '../../music/taal.ts';
 import { Pump } from '../pump.ts';
 import { StopMixer } from '../stop-mixer.ts';
+import { TaalStrip } from '../taal-strip.ts';
 import { Transport } from '../transport.ts';
 import type { LayoutMount } from './layout.ts';
 
@@ -90,9 +92,43 @@ export const mountRegular: LayoutMount = (root, viewport, app) => {
     onPanic: () => app.panic(),
   });
 
+  // The taal strip lives in what is left of the mixer band below the fader
+  // labels — on screen while playing, and clear of every key.
+  const engine = app.instrument.taal;
+  const startingTaal = engine.taal ?? playableTaals()[0];
+  if (startingTaal && !engine.taal) engine.setTaal(startingTaal);
+
+  const stripTop = mixerGeometry.labelBaseline + 18;
+  const taalStrip = startingTaal
+    ? new TaalStrip({
+        x: PUMP.w,
+        y: stripTop,
+        w: mixerW,
+        h: Math.max(0, bands.topBandH - stripTop),
+        taal: startingTaal,
+        bpm: engine.bpm,
+        playing: engine.playing,
+        onTaal: (taal) => engine.setTaal(taal),
+        onPlay: () => engine.start(),
+        onStop: () => engine.stop(),
+        onBpm: (bpm) => engine.setBpm(bpm),
+        onTap: () => engine.tap(),
+      })
+    : null;
+
+  // Light each beat when it sounds rather than when it is scheduled, so the
+  // counter agrees with the ear.
+  const unwatch = taalStrip
+    ? engine.scheduled.on((event) => {
+        taalStrip.setBpm(engine.bpm);
+        taalStrip.showMatra(event, event.atTime - app.instrument.clock.now);
+      })
+    : () => {};
+
   const stage = document.createElement('div');
   stage.className = 'instrument';
   stage.append(pump.element, transport.element, mixer.element, keyboard.element);
+  if (taalStrip) stage.append(taalStrip.element);
   root.appendChild(stage);
 
   const detachPointer = app.router.attach(keyboard.element, {
@@ -101,6 +137,8 @@ export const mountRegular: LayoutMount = (root, viewport, app) => {
   });
 
   return () => {
+    unwatch();
+    taalStrip?.destroy();
     detachPointer();
     app.setKeyboard(null);
     keyboard.destroy();

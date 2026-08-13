@@ -65,3 +65,87 @@
   width: 1px;
   background: color-mix(in srgb, var(--brass) 40%, transparent);
 }
+
+/* The taal strip, in the band below the fader labels. Quiet until it is
+   running: this sits on screen the whole time you play. */
+.taal {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-sizing: border-box;
+  padding: 0 4px;
+}
+
+.taal__button {
+  font-family: var(--font-ui);
+  font-size: 13px;
+  padding: 0 9px;
+  color: var(--brass-bright);
+  background: color-mix(in srgb, black 20%, transparent);
+  border: 1px solid color-mix(in srgb, var(--brass) 32%, transparent);
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.taal__name {
+  font-family: var(--font-display);
+  font-size: 14px;
+  color: var(--ivory);
+}
+
+.taal__play {
+  min-width: 40px;
+}
+
+.taal__tempo {
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-soft);
+  min-width: 26px;
+  text-align: center;
+}
+
+.taal__dots {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: 6px;
+  overflow: hidden;
+}
+
+/* A matra. Sam carries ×, khali 0, the other claps their number. */
+.taal__dot {
+  width: 15px;
+  height: 15px;
+  flex: none;
+  border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--brass) 40%, transparent);
+  color: var(--ink-soft);
+  font-size: 9px;
+  line-height: 13px;
+  text-align: center;
+  transition: background-color var(--dur-sounding) linear, color var(--dur-sounding) linear;
+}
+
+.taal__dot--vibhag {
+  margin-left: 9px;
+}
+
+.taal__dot--on {
+  background: var(--brass-bright);
+  color: var(--wood-deep);
+  border-color: var(--brass-bright);
+}
+
+.picker--taal {
+  grid-template-columns: repeat(4, 1fr);
+  bottom: calc(100% + 4px);
+  top: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .taal__dot {
+    transition: none;
+  }
+}
