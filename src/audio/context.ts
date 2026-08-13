@@ -27,7 +27,14 @@ export function audioContext(): AudioContext | null {
 export function createContext(): AudioContext {
   if (ctx) return ctx;
 
-  ctx = new AudioContext(CONTEXT_OPTIONS);
+  try {
+    ctx = new AudioContext(CONTEXT_OPTIONS);
+  } catch {
+    // Some devices refuse a forced sample rate. The hardware rate is fine —
+    // everything downstream is generated, not sampled — and a working
+    // instrument at 44.1 kHz beats a silent one at 48.
+    ctx = new AudioContext({ latencyHint: CONTEXT_OPTIONS.latencyHint });
+  }
 
   // The one-sample silent buffer is what actually convinces iOS the context is
   // in use; resume() alone is not always enough.
@@ -49,6 +56,19 @@ export function createContext(): AudioContext {
 /** True once the context is confirmed running — the overlay waits on this. */
 export function isRunning(): boolean {
   return ctx?.state === 'running';
+}
+
+/** For the diagnostics page. iOS also has a non-standard 'interrupted' state. */
+export function contextState(): string {
+  return ctx?.state ?? 'not created';
+}
+
+/**
+ * Nudge a stalled context. iOS sometimes leaves it 'suspended' after the first
+ * gesture, and a second `resume()` on a later tick is usually enough.
+ */
+export function nudge(): void {
+  if (ctx && ctx.state !== 'running') void ctx.resume();
 }
 
 /**

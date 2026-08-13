@@ -17,6 +17,7 @@ import './styles/panels.css';
 import { App } from './app.ts';
 import { WAVETABLE_PHASE_SEED } from './config/audio.ts';
 import { benchmark } from './boot/benchmark.ts';
+import { mountDebugAudio } from './boot/debug-audio.ts';
 import { mountDebugBanks } from './boot/debug-banks.ts';
 import { registerServiceWorker } from './boot/register-sw.ts';
 import { showTapToBegin } from './boot/tap-to-begin.ts';
@@ -39,11 +40,12 @@ function suppressGestures(): void {
   document.addEventListener('contextmenu', block);
 }
 
-/** `?debug=banks` swaps the instrument for the bank audition page. */
-const debugBanks = new URLSearchParams(location.search).get('debug') === 'banks';
+/** `?debug=banks` and `?debug=audio` swap the instrument for a listening tool. */
+const debug = new URLSearchParams(location.search).get('debug');
 
 function layoutFor(v: Viewport): LayoutMount {
-  if (debugBanks) return mountDebugBanks;
+  if (debug === 'banks') return mountDebugBanks;
+  if (debug === 'audio') return mountDebugAudio;
   if (isTabletPortrait(v)) return mountRotateMessage;
   switch (v.sizeClass) {
     case 'regular':

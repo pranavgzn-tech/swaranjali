@@ -173,3 +173,16 @@
   font-size: 13px;
   color: var(--ink-soft);
 }
+
+.debug__readout {
+  margin: 0 0 8px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: color-mix(in srgb, black 30%, transparent);
+  color: var(--brass-bright);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  line-height: 1.55;
+  white-space: pre;
+  overflow-x: auto;
+}
