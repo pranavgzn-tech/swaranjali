@@ -1,0 +1,153 @@
+/* Compact-only chrome: the top bar and the pull-down stops sheet.
+   Constants here are mirrored in ui/stops-sheet.ts — change both. */
+
+.transport {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 0 8px;
+  box-sizing: border-box;
+}
+
+.transport__group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.transport__button {
+  font-family: var(--font-ui);
+  font-size: 17px;
+  color: var(--brass-bright);
+  background: color-mix(in srgb, black 20%, transparent);
+  border: 1px solid color-mix(in srgb, var(--brass) 35%, transparent);
+  border-radius: 8px;
+}
+
+.transport__reading {
+  font-size: 13px;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+  min-width: 44px;
+  text-align: center;
+}
+
+.transport__sa {
+  font-family: var(--font-display);
+  font-size: 16px;
+  color: var(--ivory);
+  padding: 0 10px;
+}
+
+/* The Sa picker opens over whatever is beneath it and closes on choosing. */
+.picker {
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  top: calc(100% + 4px);
+  z-index: 30;
+  display: none;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 4px;
+  padding: 8px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--brass) 45%, transparent);
+  background: var(--wood-body);
+  box-shadow: 0 12px 26px color-mix(in srgb, black 55%, transparent);
+}
+
+.picker--open {
+  display: grid;
+}
+
+.picker__chip {
+  min-height: 44px;
+  font-family: var(--font-display);
+  font-size: 15px;
+  color: var(--ivory);
+  background: color-mix(in srgb, black 22%, transparent);
+  border: 1px solid color-mix(in srgb, var(--brass) 30%, transparent);
+  border-radius: 7px;
+}
+
+.picker__chip--on {
+  background: linear-gradient(to bottom, var(--brass), color-mix(in srgb, var(--brass) 65%, black));
+  color: var(--wood-deep);
+  font-weight: 600;
+}
+
+.transport--compact {
+  border-bottom: 1px solid color-mix(in srgb, var(--brass) 25%, transparent);
+}
+
+.transport__stops {
+  padding: 0 12px;
+  min-height: 34px;
+}
+
+.sheet {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  z-index: 40;
+  background: var(--wood-body);
+  border-bottom: 1px solid var(--brass);
+  box-shadow: 0 12px 28px color-mix(in srgb, black 55%, transparent);
+  transition: transform var(--dur-panel) var(--ease-key);
+  will-change: transform;
+  overflow: hidden;
+}
+
+.sheet__grid {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+  height: 100%;
+  padding: 4px 12px;
+  box-sizing: border-box;
+}
+
+.sheet__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sheet__label {
+  width: 62px;
+  flex-shrink: 0;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.sheet__track {
+  flex: 1;
+  height: 10px;
+  border-radius: 5px;
+  background: color-mix(in srgb, black 45%, transparent);
+  overflow: hidden;
+}
+
+.sheet__fill {
+  height: 100%;
+  transform-origin: left center;
+  background: linear-gradient(to right, var(--brass), var(--brass-bright));
+}
+
+.sheet__row--pending .sheet__fill {
+  background: color-mix(in srgb, var(--brass) 30%, var(--wood-lit));
+}
+
+.sheet__row--pending .sheet__label {
+  color: color-mix(in srgb, var(--ink-soft) 55%, transparent);
+}
+
+.instrument {
+  position: absolute;
+  inset: 0;
+}

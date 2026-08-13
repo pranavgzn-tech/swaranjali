@@ -1,0 +1,67 @@
+/* Faders. Brass caps on a dark track, on the wooden top surface. */
+
+.mixer {
+  position: absolute;
+}
+
+.fader {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  justify-content: center;
+}
+
+.fader__track {
+  position: absolute;
+  border-radius: 5px;
+  background: linear-gradient(
+    to right,
+    color-mix(in srgb, black 55%, transparent),
+    color-mix(in srgb, black 25%, transparent)
+  );
+  box-shadow: inset 0 1px 2px color-mix(in srgb, black 70%, transparent);
+}
+
+/* Brass: a subtle vertical gradient with a single bright top line. That one
+   line does most of the work. */
+.fader__cap {
+  position: absolute;
+  border-radius: 5px;
+  background: linear-gradient(to bottom, var(--brass) 0%, color-mix(in srgb, var(--brass) 62%, black) 100%);
+  border-top: 1px solid var(--brass-bright);
+  box-shadow: 0 2px 5px color-mix(in srgb, black 45%, transparent);
+}
+
+.fader__label {
+  position: absolute;
+  font-size: var(--size-fader-label);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+
+/* Faders 5–8 arrive in Phase 2: present so the instrument reads correctly,
+   visibly not yet live. */
+.fader--pending .fader__cap {
+  background: linear-gradient(to bottom, color-mix(in srgb, var(--brass) 34%, var(--wood-body)), var(--wood-body));
+  border-top-color: color-mix(in srgb, var(--brass) 40%, transparent);
+  box-shadow: none;
+}
+
+.fader--pending .fader__label {
+  color: color-mix(in srgb, var(--ink-soft) 55%, transparent);
+}
+
+/* The master sits behind a hairline, so a thumb never grabs it by accident. */
+.fader--master::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 12%;
+  bottom: 22%;
+  width: 1px;
+  background: color-mix(in srgb, var(--brass) 40%, transparent);
+}

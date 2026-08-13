@@ -1,0 +1,146 @@
+/* Keys are built from layered CSS, never images. A 1 pt lighter top edge, a
+   darker bottom edge, and a soft shadow cast onto the key to the right. */
+
+.keys {
+  position: absolute;
+}
+
+.key {
+  position: absolute;
+  top: 0;
+  box-sizing: border-box;
+  display: flex;
+  justify-content: center;
+  transition: transform var(--dur-key) var(--ease-key);
+  will-change: transform;
+}
+
+.key--white {
+  background: linear-gradient(to bottom, var(--ivory) 0%, var(--ivory) 92%, var(--ivory-dim) 100%);
+  border-left: 1px solid color-mix(in srgb, var(--ink) 22%, transparent);
+  border-radius: 0 0 4px 4px;
+  box-shadow: 2px 0 6px -2px color-mix(in srgb, var(--ink) 45%, transparent);
+  color: var(--ink);
+}
+
+.key--black {
+  background: linear-gradient(to bottom, #241d18 0%, var(--ebony) 78%, #0d0a08 100%);
+  border-radius: 0 0 3px 3px;
+  box-shadow: 1px 2px 5px color-mix(in srgb, black 55%, transparent);
+  color: var(--ivory);
+  z-index: 2;
+}
+
+/* Pressed: the key translates down, the top highlight goes, the shadow
+   tightens. Transform only — never width, height or box-shadow. */
+.key--down {
+  transform: translateY(3px);
+}
+
+.key--white.key--down {
+  background: linear-gradient(to bottom, var(--ivory-dim) 0%, var(--ivory) 40%, var(--ivory-dim) 100%);
+}
+
+.key--black.key--down {
+  background: linear-gradient(to bottom, var(--ebony) 0%, #0d0a08 100%);
+}
+
+/* The sounding accent: brass-bright along the key's bottom edge, faded in over
+   40 ms. No glow, no pulse. */
+.key::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  background: var(--brass-bright);
+  opacity: 0;
+  transition: opacity var(--dur-sounding) linear;
+  pointer-events: none;
+}
+
+.key--down::after {
+  opacity: 1;
+}
+
+.key__labels {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  pointer-events: none;
+  line-height: 1;
+}
+
+.key__sargam {
+  font-family: var(--font-display);
+  font-weight: 600;
+  position: relative;
+}
+
+/* Komal swaras are underlined; tivra Ma carries a short vertical line above.
+   That is Bhatkhande's convention and it is what every book will show. */
+.key__sargam--komal {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-thickness: 1px;
+}
+
+.key__sargam--tivra::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: -0.42em;
+  width: 1px;
+  height: 0.34em;
+  background: currentColor;
+}
+
+/* Register dots are drawn, not typed: combining marks position badly across
+   iOS font fallbacks. Each register reserves its own margin so the dot never
+   lands on the Western label underneath or the tivra stroke above. */
+.key__sargam--mandra::after,
+.key__sargam--taar::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.key__sargam--mandra {
+  margin-bottom: 0.42em;
+}
+
+.key__sargam--mandra::after {
+  bottom: -0.30em;
+}
+
+.key__sargam--taar {
+  margin-top: 0.42em;
+}
+
+.key__sargam--taar::after {
+  top: -0.30em;
+}
+
+.key__western {
+  color: var(--ink-soft);
+  font-family: var(--font-ui);
+  font-variant-numeric: tabular-nums;
+}
+
+.key--black .key__western {
+  color: color-mix(in srgb, var(--ivory) 62%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .key {
+    transition: none;
+  }
+}

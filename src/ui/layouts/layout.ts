@@ -4,8 +4,9 @@
  * ever leaves a listener or a DOM node behind on rotation.
  */
 
+import type { App } from '../../app.ts';
 import type { Viewport } from '../size-class.ts';
 
 export type Teardown = () => void;
 
-export type LayoutMount = (root: HTMLElement, viewport: Viewport) => Teardown;
+export type LayoutMount = (root: HTMLElement, viewport: Viewport, app: App) => Teardown;

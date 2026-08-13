@@ -2,87 +2,111 @@
  * iPad three-band layout: pump top-left, stop mixer top-right, keyboard across
  * the full width beneath. Geometry from doc 02, band heights derived from the
  * real viewport per doc 12.
- *
- * Phase 0 draws region boxes. Phase 1 replaces each box with its component;
- * the geometry maths here does not change.
  */
 
 import { deriveRegularBands, faderCentres, MIXER_DERIVED } from '../../config/derive.ts';
-import { KEYBOARD_MODES, MIXER, PUMP, PUMP_CONTROLS } from '../../config/layout.ts';
-import { regionStage, type Region } from '../region-box.ts';
+import { KEYBOARD, KEYBOARD_MODES, PUMP } from '../../config/layout.ts';
+import { TYPE } from '../../config/theme.ts';
+import { Keyboard } from '../keyboard.ts';
+import { buildKeyLayout, windowStart } from '../keyboard-model.ts';
+import { Pump } from '../pump.ts';
+import { StopMixer } from '../stop-mixer.ts';
+import { Transport } from '../transport.ts';
 import type { LayoutMount } from './layout.ts';
 
-export const mountRegular: LayoutMount = (root, viewport) => {
+export const mountRegular: LayoutMount = (root, viewport, app) => {
+  const settings = app.settings.current;
   const bands = deriveRegularBands(viewport.w, viewport.h);
-  const mixer = MIXER_DERIVED(bands.topBandH);
+  const mixerGeometry = MIXER_DERIVED(bands.topBandH);
   const mixerW = bands.stageW - PUMP.w;
-  const keys = KEYBOARD_MODES.standard;
-  const whiteW = bands.stageW / keys.whiteCount;
 
-  // The pump band holds the paddle plus its control row; the paddle keeps its
-  // 230 pt minimum and the controls take whatever is left.
-  const paddleH = PUMP.h;
-  const controlsH = bands.topBandH - paddleH;
+  const mode = KEYBOARD_MODES[settings.keyboardMode];
+  const whiteW = bands.stageW / mode.whiteCount;
+  const start = windowStart(settings.sa, settings.octaveShift, false, mode.whiteCount);
+  const keyLayout = buildKeyLayout(start, mode.whiteCount);
 
-  const regions: Region[] = [
-    {
-      name: 'Pump',
-      x: 0,
-      y: 0,
-      w: PUMP.w,
-      h: paddleH,
-      tone: 'cloth',
-      note: `paddle ${PUMP.w} × ${paddleH}, travel ${PUMP.travel}`,
-    },
-    {
-      name: 'Pump controls',
-      x: 0,
-      y: paddleH,
-      w: PUMP_CONTROLS.w,
-      h: controlsH,
-      note: 'oct − / Sa / oct + / menu',
-    },
-    {
-      name: 'Stop mixer',
-      x: PUMP.w,
-      y: 0,
-      w: mixerW,
-      h: bands.topBandH,
-      tone: 'brass',
-      note: `${MIXER.faderCount} faders · track ${mixer.trackH} from ${mixer.trackTop} · labels ${mixer.labelBaseline}`,
-    },
-    {
-      name: 'Keyboard',
-      x: 0,
-      y: bands.topBandH,
-      w: bands.stageW,
-      h: bands.keyboardH,
-      tone: 'ivory',
-      note: `${keys.whiteCount} white keys at ${whiteW.toFixed(1)} pt ≈ ${keys.mm} mm`,
-    },
-  ];
+  const keyboardGeometry = {
+    x: 0,
+    y: bands.topBandH,
+    w: bands.stageW,
+    h: bands.keyboardH,
+    whiteW,
+    blackW: KEYBOARD.blackW,
+    // Black keys stay at 62% of the white key length whatever the band height.
+    blackH: Math.round(bands.keyboardH * (KEYBOARD.blackH / KEYBOARD.h)),
+  };
 
-  const stage = regionStage(regions);
+  const keyboard = new Keyboard({
+    layout: keyLayout,
+    geometry: keyboardGeometry,
+    sa: settings.sa,
+    labelStyle: settings.labelStyle,
+    showWesternSecondary: settings.showWesternSecondary,
+    labelPosition: 'bottom',
+    labelInset: KEYBOARD.labelFromBottom,
+    westernInset: KEYBOARD.westernFromBottom,
+    sargamSize: TYPE.sargam.size,
+    westernSize: TYPE.western.size,
+  });
 
-  // Fader centres drawn as ticks, so the master gap is visible on the device.
-  for (const centre of faderCentres(mixerW)) {
-    const tick = document.createElement('div');
-    tick.className = 'tick';
-    tick.style.left = `${PUMP.w + centre}px`;
-    tick.style.top = `${mixer.trackTop}px`;
-    tick.style.height = `${mixer.trackH}px`;
-    stage.appendChild(tick);
-  }
+  app.regions.rebuild(keyboardGeometry, keyLayout);
+  app.setKeyboard(keyboard);
 
-  const readout = document.createElement('div');
-  readout.className = 'readout';
-  readout.textContent = [
-    `regular · stage ${bands.stageW} × ${bands.stageH}`,
-    `insets t${viewport.insets.top} r${viewport.insets.right} b${viewport.insets.bottom} l${viewport.insets.left}`,
-    `top band ${bands.topBandH} · keyboard ${bands.keyboardH}${bands.keyboardReduced ? ' (reduced)' : ''}`,
-  ].join('   ');
-  stage.appendChild(readout);
+  const pump = new Pump({
+    x: 0,
+    y: 0,
+    w: PUMP.w,
+    h: PUMP.h,
+    originY: viewport.insets.top,
+    bellows: app.instrument.bellows,
+    onRelease: () => app.instrument.pumpReleased(),
+  });
 
+  const transport = new Transport({
+    x: 0,
+    y: PUMP.h,
+    w: PUMP.w,
+    h: bands.topBandH - PUMP.h,
+    sa: settings.sa,
+    octaveShift: settings.octaveShift,
+    onSaChange: (sa) => app.settings.update({ sa }),
+    onOctaveChange: (octaveShift) => app.settings.update({ octaveShift }),
+    onMenu: () => app.openSettings(),
+  });
+
+  const mixer = new StopMixer({
+    x: PUMP.w,
+    y: 0,
+    w: mixerW,
+    h: bands.topBandH,
+    originY: viewport.insets.top,
+    centres: faderCentres(mixerW),
+    trackTop: mixerGeometry.trackTop,
+    trackH: mixerGeometry.trackH,
+    labelBaseline: mixerGeometry.labelBaseline,
+    labelSize: TYPE.faderLabel.size,
+    value: (id) => app.settings.current.faders[id],
+    onChange: (id, value) => app.settings.setFader(id, value),
+    onPanic: () => app.panic(),
+  });
+
+  const stage = document.createElement('div');
+  stage.className = 'instrument';
+  stage.append(pump.element, transport.element, mixer.element, keyboard.element);
   root.appendChild(stage);
-  return () => stage.remove();
+
+  const detachPointer = app.router.attach(keyboard.element, {
+    x: viewport.insets.left,
+    y: viewport.insets.top,
+  });
+
+  return () => {
+    detachPointer();
+    app.setKeyboard(null);
+    keyboard.destroy();
+    pump.destroy();
+    transport.destroy();
+    mixer.destroy();
+    stage.remove();
+  };
 };

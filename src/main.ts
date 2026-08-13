@@ -1,18 +1,26 @@
 /**
  * Boot sequence: suppress everything iOS does that would interrupt playing,
- * start watching the viewport, unlock audio behind the "Tap to begin" overlay,
- * then mount the layout for the current size class and re-mount it whenever
- * the viewport changes.
+ * start watching the viewport, then build the instrument behind the "Tap to
+ * begin" overlay and mount the layout for the current size class.
  */
 
 import './styles/tokens.css';
 import './styles/base.css';
 import './styles/boot.css';
-import './styles/regions.css';
+import './styles/keyboard.css';
+import './styles/mixer.css';
+import './styles/pump.css';
+import './styles/compact.css';
+import './styles/panels.css';
 
+import { App } from './app.ts';
+import { WAVETABLE_PHASE_SEED } from './config/audio.ts';
+import { benchmark } from './boot/benchmark.ts';
+import { mountDebugBanks } from './boot/debug-banks.ts';
 import { registerServiceWorker } from './boot/register-sw.ts';
 import { showTapToBegin } from './boot/tap-to-begin.ts';
 import { watchContextLifecycle } from './audio/context.ts';
+import { seededRandom } from './audio/random.ts';
 import { mountCompactLandscape } from './ui/layouts/compact-landscape.ts';
 import { mountCompactPortrait } from './ui/layouts/compact-portrait.ts';
 import { mountRegular } from './ui/layouts/regular.ts';
@@ -30,7 +38,11 @@ function suppressGestures(): void {
   document.addEventListener('contextmenu', block);
 }
 
+/** `?debug=banks` swaps the instrument for the bank audition page. */
+const debugBanks = new URLSearchParams(location.search).get('debug') === 'banks';
+
 function layoutFor(v: Viewport): LayoutMount {
+  if (debugBanks) return mountDebugBanks;
   if (isTabletPortrait(v)) return mountRotateMessage;
   switch (v.sizeClass) {
     case 'regular':
@@ -43,8 +55,8 @@ function layoutFor(v: Viewport): LayoutMount {
 }
 
 function boot(): void {
-  const app = document.getElementById('app');
-  if (!app) throw new Error('#app is missing from index.html');
+  const root = document.getElementById('app');
+  if (!root) throw new Error('#app is missing from index.html');
 
   suppressGestures();
   watchContextLifecycle();
@@ -56,20 +68,31 @@ function boot(): void {
   const inner = document.createElement('div');
   inner.className = 'stage__inner';
   stage.appendChild(inner);
-  app.appendChild(stage);
+  root.appendChild(stage);
 
-  let teardown: Teardown | null = null;
+  void showTapToBegin(root, (ctx) => {
+    // Everything expensive happens here, behind the overlay: the tier
+    // benchmark, the wavetables, the reverb impulse and the voice pool. None
+    // of it may happen on the first key press.
+    const { tier } = benchmark(ctx);
+    const app = new App(ctx, tier, seededRandom(WAVETABLE_PHASE_SEED));
+    app.setPanelRoot(inner);
+    app.start();
 
-  // Every viewport change re-mounts from scratch, even when the size class is
-  // unchanged, because the geometry depends on the exact stage size. Phase 1
-  // hangs the hit-region rebuild off this same signal — stale key rectangles
-  // after a rotate is the likeliest bug in this project.
-  viewport.on((v) => {
-    teardown?.();
-    teardown = layoutFor(v)(inner, v);
-  }, true);
+    let teardown: Teardown | null = null;
 
-  void showTapToBegin(app);
+    // Every viewport change re-mounts from scratch, even when the size class
+    // is unchanged, because the geometry depends on the exact stage size. This
+    // is also what rebuilds the cached hit regions — stale key rectangles
+    // after a rotate is the likeliest bug in this project.
+    viewport.on((v) => {
+      app.closeSettings();
+      app.router.releaseAll();
+      app.instrument.silenceAll();
+      teardown?.();
+      teardown = layoutFor(v)(inner, v, app);
+    }, true);
+  });
 }
 
 boot();

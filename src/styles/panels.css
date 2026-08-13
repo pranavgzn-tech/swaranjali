@@ -1,0 +1,175 @@
+/* Panels slide and fade in 180 ms. Nothing longer, nothing bouncing. */
+
+.panel {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  background: color-mix(in srgb, var(--wood-deep) 72%, transparent);
+}
+
+.panel__sheet {
+  width: min(640px, 92%);
+  max-height: 92%;
+  margin-top: 3%;
+  display: flex;
+  flex-direction: column;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--brass) 45%, transparent);
+  background: var(--wood-body);
+  box-shadow: 0 18px 40px color-mix(in srgb, black 55%, transparent);
+  overflow: hidden;
+  transform: translateY(0);
+  animation: panel-in var(--dur-panel) var(--ease-key);
+}
+
+@keyframes panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+}
+
+.panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid color-mix(in srgb, black 30%, transparent);
+}
+
+.panel__heading {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--size-panel-heading);
+  font-weight: 600;
+  color: var(--ivory);
+}
+
+.panel__close,
+.chip {
+  font-family: var(--font-ui);
+  font-size: 14px;
+  color: var(--ivory);
+  background: color-mix(in srgb, black 22%, transparent);
+  border: 1px solid color-mix(in srgb, var(--brass) 40%, transparent);
+  border-radius: 8px;
+  padding: 9px 14px;
+  min-height: 44px;
+}
+
+.chip--on {
+  background: linear-gradient(to bottom, var(--brass), color-mix(in srgb, var(--brass) 65%, black));
+  border-color: var(--brass-bright);
+  color: var(--wood-deep);
+  font-weight: 600;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.panel__body {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+}
+
+.setting {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid color-mix(in srgb, black 24%, transparent);
+}
+
+.setting__title {
+  font-size: var(--size-body);
+  color: var(--ivory);
+  margin-bottom: 3px;
+}
+
+.setting__note {
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--ink-soft);
+  max-width: 46ch;
+}
+
+.setting__control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.setting__reading {
+  font-variant-numeric: tabular-nums;
+  color: var(--brass-bright);
+  font-size: 14px;
+  min-width: 64px;
+  text-align: right;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel__sheet {
+    animation: none;
+  }
+}
+
+/* The bank audition page at ?debug=banks. Plain on purpose — it is a listening
+   tool, not part of the instrument. */
+.debug {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 24px;
+  box-sizing: border-box;
+  justify-content: center;
+}
+
+.debug__heading {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--size-panel-heading);
+  color: var(--ivory);
+}
+
+.debug__note {
+  margin: 0 0 8px;
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+
+.debug__bank {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 16px 18px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--brass) 45%, transparent);
+  background: var(--wood-body);
+  color: var(--ivory);
+  text-align: left;
+}
+
+.debug__bank-name {
+  font-family: var(--font-display);
+  font-size: 20px;
+  text-transform: capitalize;
+}
+
+.debug__bank-note {
+  font-size: 13px;
+  color: var(--ink-soft);
+}

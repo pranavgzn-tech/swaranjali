@@ -71,5 +71,61 @@ build-time layout check, which has no DOM; the first real measurement happens in
 
 **Fonts are still system fallbacks.** `tokens.css` names `Swaranjali Serif` and
 `Swaranjali Sans` with `ui-serif` / `ui-sans-serif` behind them. The self-hosted WOFF2 subset
-faces land in Phase 1 alongside the key labels, which is the first thing that depends on
-them; the licence goes in this file when they do.
+faces still need choosing; the licence goes in this file when they do.
+
+## Phase 1
+
+**Air draw is normalised by the total bank weight.** Doc 03 gives `bankDraw` weights
+"weighted by fader level" without saying how they combine. Summing them drains a full
+reservoir in about four seconds; dividing by the total weight (1.3 + 1.0 + 0.8) gives
+**8.6 s for one held note with the default stops**, which is exactly the 8–10 s doc 08 asks
+for, and 0.55 s to fill at mid travel, which is exactly what doc 08 asks for too. Two
+independent numbers landing on the spec is good evidence this is the intended reading.
+
+**The bank envelope and the note envelope are one node.** Doc 03's diagram has a bank gain
+(fader × bank envelope) feeding a note gain (attack/release). Multiplying two envelopes is
+the same as one envelope, and folding them lets each bank's fader be a single bus gain that
+every voice feeds — moving a fader touches one node instead of thirty-six. The attack and
+release timings are per bank exactly as specified.
+
+**Pressure reaches the voices as an audio-rate signal, not as parameter writes.** One
+`ConstantSourceNode` carries pressure into every filter cutoff (scaled per bank) and another
+carries the pitch sharpening into every oscillator's detune. The bellows frame therefore
+writes four parameters whether one key is down or twelve. `ToneSource.setPressure` still
+exists and is still used — the chiff is scaled by the pressure at the moment of attack.
+
+**The coupler is a fourth sub-voice on its own bus.** That is what makes its fader work
+independently while it stays male-bank reeds an octave up, +8 ms slower and −3 dB, as doc 03
+describes.
+
+**No black key after the last white key.** Building the window one white key at a time
+would otherwise add the black key above the top note, which overflows the keyboard's right
+edge by half its width. Caught by looking at a rendered screenshot, not by the type checker.
+
+**Register dots reserve their own space.** The mandra dot sits under the sargam glyph and
+the Western label sits directly beneath that, so without a reserved margin the dot lands on
+the letter below and `C3` reads as `C♭3`. Each register now carries a 0.42 em margin on the
+side its dot is on.
+
+**Sa is a picker, not a stepper.** Doc 02's control row draws `◀oct Sa:C oct▶ ☰` — four
+targets in a 300 pt band. Flanking Sa with ♭/♯ buttons made six, which overflowed the band,
+and stepping from C to B would be eleven taps. Tapping Sa now opens twelve chips.
+
+**The iPad keyboard window starts at C3; the phone's starts at madhya Sa.** Doc 02 says two
+octaves C→C, which puts madhya Sa under the hand with a mandra octave below it. Doc 11 says
+the phone shows one octave "Sa to Sa", so it starts at Sa itself — at the natural at or
+below Sa when Sa is a black key, since a window has to begin on a white key.
+
+**`outputRoute` was added to `Settings`.** Doc 07's schema predates doc 11's speaker profile,
+which needs somewhere to persist. Defaults to speaker on the lite tier, headphones otherwise,
+as doc 11 asks.
+
+**Phase 1 was verified in headless Chromium over the DevTools Protocol**, with no new
+dependency: the built app is driven at all four target viewports, screenshotted, and checked
+for overflow and stuck errors; the audio graph is rendered offline and measured. That is how
+the black-key overflow, the label collision and the transport overflow were found. It is not
+a substitute for your ears — see the checklist in the session notes.
+
+**Fonts are still system fallbacks at the end of Phase 1.** The key labels look right in
+`ui-serif`, and choosing a face is a judgement I would rather you made by eye on the device
+than I made by name. Candidates are all SIL OFL so licensing is not the constraint.
