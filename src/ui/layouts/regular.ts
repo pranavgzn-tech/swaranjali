@@ -113,6 +113,7 @@ export const mountRegular: LayoutMount = (root, viewport, app) => {
         onStop: () => engine.stop(),
         onBpm: (bpm) => engine.setBpm(bpm),
         onTap: () => engine.tap(),
+        onRecord: () => app.toggleRecording(),
       })
     : null;
 

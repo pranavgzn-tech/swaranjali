@@ -28,6 +28,8 @@ export interface TaalStripOptions {
   onStop(): void;
   onBpm(bpm: number): void;
   onTap(): void;
+  /** Returns whether it is now recording. */
+  onRecord(): Promise<boolean> | boolean;
 }
 
 const BPM_STEP = 4;
@@ -39,6 +41,7 @@ export class TaalStrip {
   readonly #tempo: HTMLElement;
   readonly #play: HTMLElement;
   readonly #picker: HTMLElement;
+  readonly #record: HTMLElement;
   readonly #options: TaalStripOptions;
 
   #taal: Taal;
@@ -77,9 +80,16 @@ export class TaalStrip {
     this.#dots = document.createElement('div');
     this.#dots.className = 'taal__dots';
 
+    // Recording lives here rather than in a panel: you have to be able to
+    // start and stop it without anything covering the keyboard.
+    this.#record = this.#button('Record', 'Start or stop recording', () => {
+      void Promise.resolve(options.onRecord()).then((on) => this.setRecording(on));
+    });
+    this.#record.classList.add('taal__record');
+
     this.#picker = this.#buildPicker();
 
-    this.element.append(this.#name, this.#play, slower, this.#tempo, faster, tap, this.#dots, this.#picker);
+    this.element.append(this.#name, this.#play, slower, this.#tempo, faster, tap, this.#dots, this.#record, this.#picker);
     this.#renderTempo();
     this.#renderDots();
   }
@@ -92,6 +102,12 @@ export class TaalStrip {
   setBpm(bpm: number): void {
     this.#bpm = bpm;
     this.#renderTempo();
+  }
+
+  /** Reflect whether a recording is running. */
+  setRecording(on: boolean): void {
+    this.#record.classList.toggle('taal__record--on', on);
+    this.#record.textContent = on ? 'Stop' : 'Record';
   }
 
   setPlaying(playing: boolean): void {

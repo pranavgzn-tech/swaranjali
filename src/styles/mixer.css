@@ -149,3 +149,16 @@
     transition: none;
   }
 }
+
+/* Recording sits at the far end of the strip, away from the transport, so it
+   is never hit by accident while reaching for play. */
+.taal__record {
+  margin-left: auto;
+  flex: none;
+}
+
+.taal__record--on {
+  background: var(--cloth);
+  border-color: var(--brass-bright);
+  color: var(--ivory);
+}

@@ -18,6 +18,7 @@ import { Body } from './body.ts';
 import { Drone, type DroneNote } from './drone.ts';
 import { Mixer } from './mixer.ts';
 import { Tabla } from './percussion.ts';
+import { Recorder } from './recorder.ts';
 import { TaalEngine } from './taal-engine.ts';
 import { createNoiseSource } from './noise.ts';
 import { Lookahead } from './scheduler.ts';
@@ -44,6 +45,7 @@ export class Instrument {
   readonly clock: Lookahead;
   readonly tabla: Tabla;
   readonly taal: TaalEngine;
+  readonly recorder: Recorder;
   readonly tier: AudioTier;
 
   readonly #ctx: AudioContext;
@@ -130,6 +132,7 @@ export class Instrument {
     this.tanpura = new Tanpura(ctx, noise, this.body.droneBus, random);
     this.tabla = new Tabla(ctx, noise, this.body.tablaBus);
     this.taal = new TaalEngine(this.clock, this.tabla);
+    this.recorder = new Recorder(ctx, this.body.recordingTap);
 
     this.mixer.route({
       drone: (id, shaped) => this.drone.setLevel(id, shaped),

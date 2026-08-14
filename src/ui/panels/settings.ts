@@ -120,6 +120,12 @@ export class SettingsPanel {
         settings.current.wakeLock,
         (wakeLock) => settings.update({ wakeLock }),
       ),
+      this.#toggle(
+        'Record my voice too',
+        'Mixes the microphone into recordings so you can hear yourself singing over the harmonium. The microphone is only switched on when this is.',
+        settings.current.micInRecordings,
+        (micInRecordings) => settings.update({ micInRecordings }),
+      ),
       this.#help(),
       this.#storage(),
       this.#version(),

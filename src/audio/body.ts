@@ -32,6 +32,8 @@ export class Body {
   /** Drone and tabla join after the instrument's own colouring (doc 03). */
   readonly droneBus: GainNode;
   readonly tablaBus: GainNode;
+  /** After the limiter: what is recorded is what was heard. */
+  readonly recordingTap: GainNode;
 
   readonly #pressureGain: GainNode;
   readonly #masterGain: GainNode;
@@ -110,7 +112,9 @@ export class Body {
     this.#wetGain.gain.value = Math.min(REVERB.defaultWet, this.#maxWet);
     profiled.connect(preDelay).connect(convolver).connect(this.#wetGain).connect(limiter);
 
-    limiter.connect(ctx.destination);
+    this.recordingTap = ctx.createGain();
+    limiter.connect(this.recordingTap);
+    this.recordingTap.connect(ctx.destination);
 
     this.setOutputRoute('headphones');
   }

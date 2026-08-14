@@ -94,6 +94,29 @@ export class App {
     this.#panel = null;
   }
 
+  /**
+   * Start or stop recording, and report which it now is.
+   *
+   * The microphone is only ever reached for here, and only when the setting
+   * asks for it — doc 03 is explicit that permission is requested when the
+   * user turns the toggle on and never at startup.
+   */
+  async toggleRecording(): Promise<boolean> {
+    const recorder = this.instrument.recorder;
+    if (recorder.recording) {
+      await recorder.stop();
+      return false;
+    }
+
+    if (this.settings.current.micInRecordings) {
+      const granted = await recorder.setMicEnabled(true);
+      // Refused, or no microphone: record the instrument alone rather than
+      // failing, and stop claiming the mic is included.
+      if (!granted) this.settings.update({ micInRecordings: false });
+    }
+    return recorder.start();
+  }
+
   /** Silence everything at once. The hidden gesture, and interruptions. */
   panic(): void {
     this.router.releaseAll();
