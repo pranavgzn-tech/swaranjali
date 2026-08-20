@@ -19,10 +19,21 @@ const CACHE = `swaranjali-${BUILD_HASH}`;
 const scopePath = new URL(sw.registration.scope).pathname;
 
 sw.addEventListener('install', (event) => {
-  // No skipWaiting here. Doc 12 is explicit that the app must never swap
-  // itself out mid-phrase: the new worker waits until the user taps restart
-  // in settings, which posts the message handled at the bottom of this file.
-  event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(PRECACHE)));
+  // Take over as soon as the new build is cached, but *without* claiming the
+  // pages already open. That combination is what doc 12 actually asks for:
+  // a session in progress is never swapped out underneath the player, and the
+  // next time the app is launched it is simply the new version.
+  //
+  // Waiting instead — for a restart the user taps in settings — sounds more
+  // careful and is worse. It left a device pinned to an old build with no
+  // visible sign anything was stale, which is how a feature that had shipped
+  // days earlier could be reported as missing.
+  event.waitUntil(
+    caches
+      .open(CACHE)
+      .then((cache) => cache.addAll(PRECACHE))
+      .then(() => sw.skipWaiting()),
+  );
 });
 
 sw.addEventListener('activate', (event) => {

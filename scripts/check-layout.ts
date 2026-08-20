@@ -66,6 +66,11 @@ for (const testCase of CASES) {
     check(bands.keyboardH >= KEYBOARD_H_FLOOR, `keyboard ${bands.keyboardH} is below the ${KEYBOARD_H_FLOOR} floor`);
     check(mixer.trackTop + mixer.trackH + MIXER.capH / 2 <= bands.topBandH, 'fader track and cap overflow the mixer band');
     check(mixer.labelBaseline <= bands.topBandH, 'fader labels fall outside the mixer band');
+    // The taal strip lives in what is left of the band below the fader labels.
+    // If that gap closes, the transport and the beat dots vanish silently.
+    const stripTop = mixer.labelBaseline + 18;
+    check(bands.topBandH - stripTop >= 26, `the taal strip has only ${bands.topBandH - stripTop} pt and needs 26`);
+
     check(firstCentre - MIXER.capW / 2 >= 0, 'the first fader cap overflows the left edge');
     check(lastCentre + MIXER.capW / 2 <= mixerW, 'the master fader cap overflows the right edge');
     check(whiteW > 0, 'white key width is not positive');
