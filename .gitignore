@@ -145,3 +145,6 @@ vite.config.ts.timestamp-*
 # Generated at build time by scripts/gen-assets.ts
 public/icons/
 public/launch/
+
+# Generated document, rebuilt from docs/manual/build-manual.py
+Swaranjali-teaching-manual.pdf
